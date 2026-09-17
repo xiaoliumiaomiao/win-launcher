@@ -22,7 +22,11 @@ WinLauncher replaces all of that with a single icon: a small panel that finds yo
 
 ## Quick start
 
-Needs the [.NET 10 SDK](https://dotnet.microsoft.com/download) to build. The published output is one self-contained `.exe` — the machine running it needs nothing installed.
+**Just want to use it** — download **[WinLauncher.exe](https://github.com/xiaoliumiaomiao/win-launcher/releases/latest)** and run it. Nothing to install; the executable is self-contained and does not need the .NET runtime.
+
+To get it onto the desktop too: right-click the downloaded file → **发送到** → **桌面快捷方式**, then rename it to whatever you like.
+
+**Building from source** needs the [.NET 10 SDK](https://dotnet.microsoft.com/download):
 
 ```powershell
 git clone https://github.com/xiaoliumiaomiao/win-launcher.git
@@ -30,7 +34,7 @@ cd win-launcher
 pwsh -File tools\install.ps1
 ```
 
-That produces `publish\WinLauncher.exe` and a desktop shortcut.
+That produces `publish\WinLauncher.exe` and a desktop shortcut in one step.
 
 ## Using it
 

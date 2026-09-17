@@ -22,7 +22,11 @@ WinLauncher 把这些换成一个图标：一个自己会找你软件、按用�
 
 ## 快速开始
 
-构建需要 [.NET 10 SDK](https://dotnet.microsoft.com/download)。产物是单个自包含 exe，运行它的机器不需要装任何东西。
+**只想用** —— 下载 **[WinLauncher.exe](https://github.com/xiaoliumiaomiao/win-launcher/releases/latest)** 直接双击运行。不用装任何东西，exe 是自包含的，不需要 .NET 运行时。
+
+想让它上桌面：右键下载下来的文件 → **发送到** → **桌面快捷方式**，然后改成你想要的名字。
+
+**想从源码构建**需要 [.NET 10 SDK](https://dotnet.microsoft.com/download)：
 
 ```powershell
 git clone https://github.com/xiaoliumiaomiao/win-launcher.git
@@ -30,7 +34,7 @@ cd win-launcher
 pwsh -File tools\install.ps1
 ```
 
-会生成 `publish\WinLauncher.exe` 并在桌面建好快捷方式。
+一条命令同时生成 `publish\WinLauncher.exe` 和桌面快捷方式。
 
 ## 怎么用
 

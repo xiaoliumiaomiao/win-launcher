@@ -200,6 +200,22 @@ Check "确实存在同时属于两个分类的应用" ($bothCount -ge 1) "多归
 
 # ==================== 收尾 ====================
 Stop-App
+
+# ★ 必须把测试配置删掉。
+#   测试用的是隔离的自定义目录来源，配置留着的话下次打开程序
+#   看到的就是测试夹具里那几个假应用，而不是用户自己的真实应用列表。
+#   删掉之后程序会按默认来源重新自动扫描。
+foreach ($n in 'launcher.json', 'launcher.json.bak', 'diagnostics.log') {
+    $p = Join-Path $dataDir $n
+    if (Test-Path -LiteralPath $p) {
+        try { Remove-Item -LiteralPath $p -Force } catch { }
+    }
+}
+
+# 测试产物目录也顺手清掉（被占用就留着，不影响）
+try { Remove-Item -LiteralPath $fixture -Recurse -Force -ErrorAction Stop } catch { }
+
 Write-Output "`n==================== 结果 ===================="
 Write-Output "通过 $script:pass  失败 $script:fail"
+Write-Output "（测试配置已清除，下次打开程序会重新自动扫描真实应用）"
 if ($script:fail -gt 0) { exit 1 }

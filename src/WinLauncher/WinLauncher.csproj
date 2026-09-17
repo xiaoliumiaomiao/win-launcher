@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <!-- 仅为拿 WinForms.NotifyIcon 做托盘图标；WPF 没有内置托盘支持 -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>WinLauncher</RootNamespace>
+    <AssemblyName>WinLauncher</AssemblyName>
+    <Platforms>x64</Platforms>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- 多尺寸图标（tools\make-icon.ps1 生成），任务栏/桌面快捷方式/托盘共用 -->
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <!-- WPF 靠反射加载 XAML 类型，开裁剪会在运行时崩溃 -->
+    <PublishTrimmed>false</PublishTrimmed>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      UseWindowsForms 会自动注入这两个全局 using，都必须移除：
+
+      System.Windows.Forms —— 与 WPF 的 Application / MessageBox / Clipboard /
+        MenuItem / Control 等类型重名。需要托盘时显式写 WinForms.NotifyIcon。
+
+      System.Drawing —— 与 WPF 的 Size / Point / Rectangle / Brush / Font /
+        Color 全面重名，留着会让每个用到这些类型的文件都要写全名。
+      图标提取走纯 Win32 + WPF Imaging，本来也不需要 GDI+。
+    -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+
+    <!-- WPF 的隐式 using 集合不含 System.IO，但本项目到处要用 Path/Directory/File -->
+    <Using Include="System.IO" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 标题栏里要显示这个图标，必须作为资源嵌入，光设 ApplicationIcon 是拿不到的 -->
+    <Resource Include="Assets\app.ico" />
+  </ItemGroup>
+
+</Project>

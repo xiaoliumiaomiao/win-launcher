@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    开发期验证工具：向指定坐标发起一次真实的 OLE 拖放。
+
+    WPF 的拖放走的是 OLE IDropTarget，不是 WM_DROPFILES，
+    没法用键盘或简单鼠标模拟触发，必须有一个真的拖拽源。
+    这个小程序就是那个源 —— 用来验证主程序的 AllowDrop 链路是否通。
+
+    用法见 tools\test-drag.ps1。注意 XML 注释里不能写连续两个减号。
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>DragProbe</RootNamespace>
+    <AssemblyName>DragProbe</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- WPF 的隐式 using 集合不含 System.IO -->
+    <Using Include="System.IO" />
+  </ItemGroup>
+
+</Project>

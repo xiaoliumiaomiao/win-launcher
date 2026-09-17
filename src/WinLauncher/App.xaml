@@ -1,0 +1,248 @@
+<Application x:Class="WinLauncher.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             ShutdownMode="OnExplicitShutdown">
+    <Application.Resources>
+        <ResourceDictionary>
+
+            <!--
+                主题画刷。这里的默认值是深色主题，ThemeManager 在启动时按系统设置
+                直接改写这些 SolidColorBrush 的 Color（而不是替换资源），
+                所以 XAML 里用 StaticResource 引用即可，颜色变化会自动重绘。
+                带 alpha 的颜色是为了让窗口的 Mica 材质透出来。
+            -->
+            <SolidColorBrush x:Key="PanelBackgroundBrush"      Color="#CC1F1F1F"/>
+            <SolidColorBrush x:Key="SidebarBackgroundBrush"    Color="#40000000"/>
+            <SolidColorBrush x:Key="CardBackgroundBrush"       Color="#18FFFFFF"/>
+            <SolidColorBrush x:Key="CardHoverBrush"            Color="#2EFFFFFF"/>
+            <SolidColorBrush x:Key="CardPressedBrush"          Color="#18FFFFFF"/>
+            <SolidColorBrush x:Key="CategorySelectedBrush"     Color="#30FFFFFF"/>
+            <SolidColorBrush x:Key="CategoryHoverBrush"        Color="#18FFFFFF"/>
+            <SolidColorBrush x:Key="TextPrimaryBrush"          Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="TextSecondaryBrush"        Color="#9EFFFFFF"/>
+            <SolidColorBrush x:Key="TextTertiaryBrush"         Color="#66FFFFFF"/>
+            <SolidColorBrush x:Key="AccentBrush"               Color="#60CDFF"/>
+            <SolidColorBrush x:Key="DividerBrush"              Color="#18FFFFFF"/>
+            <SolidColorBrush x:Key="SearchBackgroundBrush"     Color="#1AFFFFFF"/>
+            <SolidColorBrush x:Key="DangerBrush"               Color="#FF7272"/>
+            <SolidColorBrush x:Key="DialogBackgroundBrush"     Color="#F21F1F1F"/>
+
+            <!-- 对话框外壳：无边框窗口 + 圆角 -->
+            <Style x:Key="DialogShellStyle" TargetType="Border">
+                <Setter Property="CornerRadius" Value="10"/>
+                <Setter Property="Background" Value="{StaticResource DialogBackgroundBrush}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+            </Style>
+
+            <!-- 对话框里的小号说明文字 -->
+            <Style x:Key="FieldLabelStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Margin" Value="0,0,0,5"/>
+                <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+            </Style>
+
+            <Style x:Key="HintTextStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="11.5"/>
+                <Setter Property="Margin" Value="0,5,0,0"/>
+                <Setter Property="TextWrapping" Value="Wrap"/>
+                <Setter Property="Foreground" Value="{StaticResource TextTertiaryBrush}"/>
+            </Style>
+
+            <Style x:Key="DialogCheckBoxStyle" TargetType="CheckBox">
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="Margin" Value="0,6"/>
+                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            </Style>
+
+            <!-- ============ 标题栏按钮（最小化 / 关闭） ============ -->
+            <Style x:Key="TitleBarButtonStyle" TargetType="Button">
+                <Setter Property="Width" Value="46"/>
+                <Setter Property="Height" Value="46"/>
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets"/>
+                <Setter Property="FontSize" Value="10"/>
+                <Setter Property="Cursor" Value="Arrow"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Root" Background="{TemplateBinding Background}">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Root" Property="Background" Value="{StaticResource CategoryHoverBrush}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="CloseButtonStyle" TargetType="Button" BasedOn="{StaticResource TitleBarButtonStyle}">
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="Background" Value="#C42B1C"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- ============ 侧栏底部的小按钮 ============ -->
+            <Style x:Key="SidebarActionStyle" TargetType="Button">
+                <Setter Property="Height" Value="32"/>
+                <Setter Property="Margin" Value="8,2"/>
+                <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                <Setter Property="Padding" Value="10,0"/>
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+                <Setter Property="FontSize" Value="12.5"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Root" Background="{TemplateBinding Background}" CornerRadius="6">
+                                <ContentPresenter Margin="{TemplateBinding Padding}"
+                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Root" Property="Background" Value="{StaticResource CategoryHoverBrush}"/>
+                                    <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ============ 左侧分类项 ============ -->
+            <Style x:Key="CategoryItemStyle" TargetType="ListBoxItem">
+                <Setter Property="Height" Value="34"/>
+                <Setter Property="Margin" Value="6,1"/>
+                <Setter Property="Padding" Value="10,0"/>
+                <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ListBoxItem">
+                            <Border x:Name="Root" Background="Transparent" CornerRadius="6"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Root" Property="Background" Value="{StaticResource CategoryHoverBrush}"/>
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="Root" Property="Background" Value="{StaticResource CategorySelectedBrush}"/>
+                                    <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ============ 应用卡片 ============ -->
+            <Style x:Key="AppCardStyle" TargetType="Border">
+                <Setter Property="Width" Value="132"/>
+                <Setter Property="Height" Value="126"/>
+                <Setter Property="Margin" Value="6"/>
+                <Setter Property="CornerRadius" Value="8"/>
+                <Setter Property="Background" Value="{StaticResource CardBackgroundBrush}"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Background" Value="{StaticResource CardHoverBrush}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- ============ 普通按钮（对话框用） ============ -->
+            <Style x:Key="DialogButtonStyle" TargetType="Button">
+                <Setter Property="MinWidth" Value="84"/>
+                <Setter Property="Height" Value="32"/>
+                <Setter Property="Margin" Value="6,0,0,0"/>
+                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Root" CornerRadius="6" Background="{StaticResource CardBackgroundBrush}">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Root" Property="Background" Value="{StaticResource CardHoverBrush}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="PrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource DialogButtonStyle}">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Root" CornerRadius="6" Background="{StaticResource AccentBrush}">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Root" Property="Opacity" Value="0.85"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="Foreground" Value="#1A1A1A"/>
+            </Style>
+
+            <Style x:Key="DialogTextBoxStyle" TargetType="TextBox">
+                <Setter Property="Height" Value="32"/>
+                <Setter Property="Padding" Value="8,0"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                <Setter Property="CaretBrush" Value="{StaticResource TextPrimaryBrush}"/>
+                <Setter Property="SelectionBrush" Value="{StaticResource AccentBrush}"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="TextBox">
+                            <Border CornerRadius="6" Background="{StaticResource SearchBackgroundBrush}"
+                                    BorderBrush="{StaticResource DividerBrush}" BorderThickness="1">
+                                <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"
+                                              VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ============ 右键菜单 ============ -->
+            <Style TargetType="ContextMenu">
+                <Setter Property="Background" Value="#F22B2B2B"/>
+                <Setter Property="Foreground" Value="White"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Padding" Value="4"/>
+            </Style>
+
+            <Style TargetType="MenuItem">
+                <Setter Property="Foreground" Value="White"/>
+                <Setter Property="FontSize" Value="12.5"/>
+                <Setter Property="Padding" Value="10,7"/>
+            </Style>
+
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

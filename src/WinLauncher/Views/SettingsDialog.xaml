@@ -1,0 +1,116 @@
+<Window x:Class="WinLauncher.Views.SettingsDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="设置"
+        Width="560" SizeToContent="Height"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        ResizeMode="NoResize" ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner"
+        FontFamily="Microsoft YaHei UI, Segoe UI"
+        PreviewKeyDown="OnPreviewKeyDown">
+
+    <Border Style="{StaticResource DialogShellStyle}" Margin="14">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="18" ShadowDepth="0" Opacity="0.5" Color="Black"/>
+        </Border.Effect>
+
+        <StackPanel Margin="22,20,22,20">
+            <TextBlock Text="设置" FontSize="15" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,18"/>
+
+            <!-- ===== 自动扫描来源 ===== -->
+            <TextBlock Text="自动扫描来源" Style="{StaticResource FieldLabelStyle}"/>
+            <Border CornerRadius="6" Padding="12,10"
+                    Background="{StaticResource SearchBackgroundBrush}"
+                    BorderBrush="{StaticResource DividerBrush}" BorderThickness="1">
+                <ItemsControl x:Name="SourceList">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <CheckBox IsChecked="{Binding Enabled, Mode=TwoWay}"
+                                      Content="{Binding DisplayName}"
+                                      Margin="0,3"
+                                      FontSize="13"
+                                      Foreground="{StaticResource TextPrimaryBrush}"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Border>
+            <TextBlock Style="{StaticResource HintTextStyle}"
+                       Text="这些位置里的快捷方式会被自动收进来。开始菜单里的一级文件夹会变成分类，文件夹内部就算再套子目录也会被压平到同一个分类，不会产生子分类。"/>
+
+            <CheckBox x:Name="FilterNoiseBox" Style="{StaticResource DialogCheckBoxStyle}"
+                      Margin="0,10,0,0"
+                      Content="过滤卸载程序、帮助文档、官网链接、许可证这类快捷方式"/>
+
+            <!-- ===== 自定义目录 ===== -->
+            <TextBlock Text="自定义目录（可选）" Style="{StaticResource FieldLabelStyle}" Margin="0,16,0,5"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBox x:Name="CustomRootBox" Grid.Column="0"
+                         Style="{StaticResource DialogTextBoxStyle}"
+                         IsReadOnly="True"
+                         Foreground="{StaticResource TextSecondaryBrush}"/>
+
+                <Button Grid.Column="1" Content="浏览…" Style="{StaticResource DialogButtonStyle}"
+                        Margin="6,0,0,0" Click="OnBrowseCustomRoot"/>
+                <Button Grid.Column="2" Content="清除" Style="{StaticResource DialogButtonStyle}"
+                        Margin="6,0,0,0" Click="OnClearCustomRoot"/>
+            </Grid>
+            <TextBlock Style="{StaticResource HintTextStyle}"
+                       Text="如果你另有一堆自己整理的快捷方式，放一个目录挂上来即可。"/>
+
+            <!-- ===== 热键 ===== -->
+            <TextBlock Text="全局热键" Style="{StaticResource FieldLabelStyle}" Margin="0,18,0,5"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="200"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBox x:Name="HotKeyBox" Grid.Column="0"
+                         Style="{StaticResource DialogTextBoxStyle}"
+                         IsReadOnly="True" Cursor="Hand"
+                         PreviewKeyDown="OnHotKeyCapture"
+                         GotKeyboardFocus="OnHotKeyBoxFocused"/>
+
+                <TextBlock Grid.Column="1" VerticalAlignment="Center" Margin="10,0,0,0"
+                           FontSize="11.5" TextWrapping="Wrap"
+                           Foreground="{StaticResource TextTertiaryBrush}"
+                           Text="点这里，然后直接按下你想要的组合键"/>
+            </Grid>
+            <TextBlock Style="{StaticResource HintTextStyle}"
+                       Text="注意：Windows 的热键机制不区分左右 Alt，所以 Alt+. 时左右 Alt 都会触发。必须至少带一个修饰键（Ctrl / Alt / Shift / Win）。"/>
+
+            <!-- ===== 行为 ===== -->
+            <CheckBox x:Name="HideAfterLaunchBox" Style="{StaticResource DialogCheckBoxStyle}"
+                      Margin="0,18,0,0" Content="启动一个应用之后自动把窗口收起来"/>
+
+            <!-- ===== 维护 ===== -->
+            <TextBlock Text="维护" Style="{StaticResource FieldLabelStyle}" Margin="0,18,0,5"/>
+            <StackPanel Orientation="Horizontal">
+                <Button Content="清空图标缓存" Style="{StaticResource DialogButtonStyle}"
+                        Margin="0" Click="OnClearIconCache"
+                        ToolTip="图标显示不正常时用。下次打开应用会重新从程序里提取。"/>
+                <Button Content="打开数据目录" Style="{StaticResource DialogButtonStyle}"
+                        Click="OnOpenDataFolder"
+                        ToolTip="配置文件和图标缓存所在的位置，备份时拷这个文件夹即可"/>
+            </StackPanel>
+            <TextBlock x:Name="DataPathText" Style="{StaticResource HintTextStyle}"/>
+            <TextBlock Style="{StaticResource HintTextStyle}"
+                       Text="改完来源后点「确定」会自动重新同步一次。主窗口里按 F5 也能随时手动同步。"/>
+
+            <!-- ===== 按钮 ===== -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,24,0,0">
+                <Button Content="取消" Style="{StaticResource DialogButtonStyle}"
+                        IsCancel="True" Click="OnCancel"/>
+                <Button Content="确定" Style="{StaticResource PrimaryButtonStyle}"
+                        IsDefault="True" Click="OnConfirm"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>

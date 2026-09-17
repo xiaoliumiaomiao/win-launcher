@@ -1,0 +1,370 @@
+<Window x:Class="WinLauncher.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        Title="应用启动器"
+        Width="1040" Height="680"
+        MinWidth="760" MinHeight="460"
+        WindowStyle="None"
+        AllowsTransparency="False"
+        Background="{x:Null}"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        AllowDrop="True"
+        FontFamily="Microsoft YaHei UI, Segoe UI"
+        TextOptions.TextFormattingMode="Ideal"
+        DragEnter="OnDragEnter"
+        DragOver="OnDragOver"
+        DragLeave="OnDragLeave"
+        Drop="OnDrop"
+        PreviewKeyDown="OnPreviewKeyDown">
+
+    <!--
+        WindowChrome 而不是 AllowsTransparency=True：
+        后者会让 WPF 走软件渲染，并且禁用 DWM 的 Mica、圆角和 Snap，文字还会发虚。
+        CaptionHeight 让标题栏区域自动获得拖动 / 双击最大化 / 右键系统菜单，
+        不需要手写 DragMove()。
+    -->
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="46"
+                            ResizeBorderThickness="6"
+                            GlassFrameThickness="0"
+                            CornerRadius="0"
+                            UseAeroCaptionButtons="False"/>
+    </shell:WindowChrome.WindowChrome>
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </Window.Resources>
+
+    <Border Background="{StaticResource PanelBackgroundBrush}"
+            BorderBrush="{StaticResource DividerBrush}"
+            BorderThickness="1"
+            AllowDrop="True"
+            DragEnter="OnDragEnter"
+            DragOver="OnDragOver"
+            DragLeave="OnDragLeave"
+            Drop="OnDrop">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="46"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- ==================== 标题栏 ==================== -->
+            <Grid Grid.Row="0" Background="Transparent">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal"
+                            Margin="16,0,0,0" VerticalAlignment="Center"
+                            IsHitTestVisible="False">
+                    <Image Source="pack://application:,,,/Assets/app.ico"
+                           Width="18" Height="18"
+                           RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <TextBlock Text="我的应用" Margin="9,0,0,0"
+                               FontSize="13.5" FontWeight="SemiBold"
+                               Foreground="{StaticResource TextPrimaryBrush}"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- 搜索框。在 CaptionHeight 区域内，必须显式声明可点击 -->
+                <Border Grid.Column="1" Width="300" Height="30"
+                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                        CornerRadius="6"
+                        Background="{StaticResource SearchBackgroundBrush}"
+                        shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" Text="&#xE721;"
+                                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                   FontSize="12" Margin="10,0,7,0"
+                                   VerticalAlignment="Center"
+                                   Foreground="{StaticResource TextTertiaryBrush}"/>
+
+                        <Grid Grid.Column="1">
+                            <TextBox x:Name="SearchBox"
+                                     Background="Transparent" BorderThickness="0"
+                                     Foreground="{StaticResource TextPrimaryBrush}"
+                                     CaretBrush="{StaticResource TextPrimaryBrush}"
+                                     SelectionBrush="{StaticResource AccentBrush}"
+                                     FontSize="13" VerticalContentAlignment="Center"
+                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <TextBlock Text="搜索应用…" IsHitTestVisible="False"
+                                       VerticalAlignment="Center" FontSize="13"
+                                       Foreground="{StaticResource TextTertiaryBrush}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SearchText}" Value="">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal"
+                            shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Button Content="&#xE921;" Style="{StaticResource TitleBarButtonStyle}"
+                            Click="OnMinimizeClick" ToolTip="最小化"/>
+                    <Button Content="&#xE8BB;" Style="{StaticResource CloseButtonStyle}"
+                            Click="OnCloseClick" ToolTip="隐藏到系统托盘（Alt+. 可随时唤出）"/>
+                </StackPanel>
+            </Grid>
+
+            <!--
+                提权警告条。
+                以管理员身份运行时，Windows 的 UIPI 会阻止普通权限的 explorer
+                向本程序发送拖放消息，从桌面/资源管理器拖文件进来会**静默失效**。
+                这个失败没有任何报错，用户只会觉得"拖拽坏了"，所以必须在界面
+                上主动说明，并给一个一键修复的出口。
+            -->
+            <Border x:Name="ElevationBanner" Grid.Row="1"
+                    Visibility="Collapsed"
+                    Background="#2EFF9F0A"
+                    BorderBrush="#55FF9F0A"
+                    BorderThickness="0,0,0,1"
+                    Padding="16,10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Text="&#xE7BA;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                               FontSize="14" Margin="0,0,10,0" VerticalAlignment="Center"
+                               Foreground="#FFB74D"/>
+
+                    <TextBlock Grid.Column="1" VerticalAlignment="Center"
+                               FontSize="12.5" TextWrapping="Wrap"
+                               Foreground="{StaticResource TextPrimaryBrush}"
+                               Text="当前以管理员身份运行 —— 从桌面或资源管理器拖拽文件进来会失效（Windows 的 UIPI 限制，且不会有任何报错）。"/>
+
+                    <Button Grid.Column="2" Content="以普通权限重启"
+                            Style="{StaticResource DialogButtonStyle}"
+                            Margin="14,0,0,0" Height="28"
+                            Click="OnRelaunchUnelevated"/>
+                </Grid>
+            </Border>
+
+            <!-- ==================== 主体 ==================== -->
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="196"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- ===== 左侧分类栏 ===== -->
+                <Border Grid.Column="0"
+                        Background="{StaticResource SidebarBackgroundBrush}"
+                        BorderBrush="{StaticResource DividerBrush}"
+                        BorderThickness="0,0,1,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <ListBox x:Name="CategoryList" Grid.Row="0"
+                                 ItemsSource="{Binding Categories}"
+                                 SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"
+                                 ItemContainerStyle="{StaticResource CategoryItemStyle}"
+                                 Background="Transparent" BorderThickness="0"
+                                 Margin="0,6,0,0"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding Name}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding CountLabel}"
+                                                   FontSize="11" Margin="6,0,0,0"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{StaticResource TextTertiaryBrush}"/>
+                                        <Grid.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="重命名分类" Click="OnRenameCategory"
+                                                          IsEnabled="{Binding CanEdit}"/>
+                                                <!--
+                                                    内置分类（开发工具/游戏/…）不给删：Id 是固定的，
+                                                    删掉下次启动会被分类器重新建出来，删了等于没删。
+                                                    改名可以，Id 不变所以归类不受影响。
+                                                -->
+                                                <MenuItem Header="删除分类" Click="OnDeleteCategory"
+                                                          IsEnabled="{Binding CanDelete}"/>
+                                            </ContextMenu>
+                                        </Grid.ContextMenu>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <StackPanel Grid.Row="1" Margin="0,4,0,8">
+                            <Button Content="＋   添加应用"
+                                    Style="{StaticResource SidebarActionStyle}"
+                                    Click="OnBrowseAddClick"
+                                    ToolTip="从文件对话框选择程序（开始菜单里的应用拖不动时用这个）"/>
+                            <Button Content="＋   新建分类"
+                                    Style="{StaticResource SidebarActionStyle}"
+                                    Click="OnAddCategory"/>
+                            <Button Content="⚙   设置"
+                                    Style="{StaticResource SidebarActionStyle}"
+                                    Click="OnOpenSettings"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- ===== 右侧应用网格 ===== -->
+                <Grid Grid.Column="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!--
+                        首次自动扫描的结果提示。
+                        刻意用行内提示条而不是 MessageBox —— 首次启动就弹一个必须点掉的
+                        模态框很烦人，而且会挡住刚刚自动填好的界面。
+                    -->
+                    <Border x:Name="ScanSummaryBanner" Grid.Row="0"
+                            Visibility="Collapsed"
+                            Margin="10,8,10,0" Padding="12,9"
+                            CornerRadius="7"
+                            Background="{StaticResource SearchBackgroundBrush}"
+                            BorderBrush="{StaticResource DividerBrush}"
+                            BorderThickness="1">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock x:Name="ScanSummaryText" Grid.Column="0"
+                                       VerticalAlignment="Center"
+                                       FontSize="12.5" TextWrapping="Wrap"
+                                       Foreground="{StaticResource TextSecondaryBrush}"/>
+
+                            <Button Grid.Column="1" Content="&#xE711;"
+                                    Style="{StaticResource TitleBarButtonStyle}"
+                                    Width="30" Height="30" FontSize="11"
+                                    Click="OnDismissScanSummary"
+                                    ToolTip="知道了"/>
+                        </Grid>
+                    </Border>
+
+                    <ScrollViewer Grid.Row="1"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  Padding="8,4,8,16">
+                        <ItemsControl ItemsSource="{Binding VisibleApps}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border x:Name="Card"
+                                            Style="{StaticResource AppCardStyle}"
+                                            MouseLeftButtonUp="OnCardClick"
+                                            ToolTip="{Binding MissingTooltip}">
+                                        <Border.ContextMenu>
+                                            <!--
+                                                「归类」的子菜单在 ContextMenuOpening 里动态填 ——
+                                                分类列表会变，写死在 XAML 里没法同步。
+                                            -->
+                                            <ContextMenu ContextMenuOpening="OnCardMenuOpening">
+                                                <MenuItem Header="编辑简介" Click="OnEditApp"/>
+                                                <MenuItem Header="重命名" Click="OnRenameApp"/>
+                                                <MenuItem Header="归类"/>
+                                                <Separator/>
+                                                <MenuItem Header="从列表中移除" Click="OnRemoveApp"/>
+                                            </ContextMenu>
+                                        </Border.ContextMenu>
+
+                                        <StackPanel x:Name="CardBody" Margin="8,13,8,8">
+                                            <Image Source="{Binding Icon}"
+                                                   Width="48" Height="48"
+                                                   RenderOptions.BitmapScalingMode="HighQuality"/>
+
+                                            <TextBlock x:Name="NameText"
+                                                       Text="{Binding Name}"
+                                                       Margin="0,9,0,0" FontSize="12.5"
+                                                       HorizontalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Foreground="{StaticResource TextPrimaryBrush}"/>
+
+                                            <TextBlock Text="{Binding Description}"
+                                                       Margin="0,3,0,0" FontSize="11"
+                                                       HorizontalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Foreground="{StaticResource TextSecondaryBrush}"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding IsMissing}" Value="True">
+                                            <Setter TargetName="CardBody" Property="Opacity" Value="0.38"/>
+                                            <Setter TargetName="NameText" Property="TextDecorations" Value="Strikethrough"/>
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <!-- 空状态 -->
+                    <StackPanel Grid.Row="1"
+                                HorizontalAlignment="Center" VerticalAlignment="Center"
+                                IsHitTestVisible="False" MaxWidth="380"
+                                Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="{Binding EmptyTitle}"
+                                   FontSize="15" HorizontalAlignment="Center"
+                                   Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <TextBlock Text="{Binding EmptyHint}"
+                                   FontSize="12.5" Margin="0,12,0,0"
+                                   HorizontalAlignment="Center" TextAlignment="Center"
+                                   LineHeight="21"
+                                   Foreground="{StaticResource TextTertiaryBrush}"/>
+                    </StackPanel>
+
+                    <!-- 拖拽悬停提示 -->
+                    <Border x:Name="DropOverlay" Grid.Row="1"
+                            Visibility="Collapsed" IsHitTestVisible="False"
+                            Margin="10" CornerRadius="8"
+                            Background="#332F6FEB"
+                            BorderBrush="{StaticResource AccentBrush}"
+                            BorderThickness="2">
+                        <TextBlock x:Name="DropTargetHint"
+                                   Text="松开即可添加到当前分类"
+                                   FontSize="14" FontWeight="SemiBold"
+                                   TextAlignment="Center" LineHeight="24"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                    </Border>
+                </Grid>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

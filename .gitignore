@@ -1,0 +1,15 @@
+# 构建产物
+bin/
+obj/
+publish/
+publish-single/
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.user
+*.suo
+
+# 本地临时文件
+*.log
+*.tmp

@@ -24,7 +24,7 @@ WinLauncher 把这些换成一个图标：一个自己会找你软件、按用�
 
 **只想用** —— 下载 **[WinLauncher.exe](https://github.com/xiaoliumiaomiao/win-launcher/releases/latest)** 直接双击运行。不用装任何东西，exe 是自包含的，不需要 .NET 运行时。
 
-想让它上桌面：右键下载下来的文件 → **发送到** → **桌面快捷方式**，然后改成你想要的名字。
+想让它上桌面：打开程序，用**设置 → 创建桌面快捷方式**。这样快捷方式会带正确的名字和图标；走 Windows 自带的「发送到 → 桌面快捷方式」做不到这两点。
 
 **想从源码构建**需要 [.NET 10 SDK](https://dotnet.microsoft.com/download)：
 

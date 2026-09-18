@@ -21,9 +21,19 @@ public partial class App : Application
     private TrayIcon? _tray;
     private MainWindow? _window;
 
+    /// <summary>供安装脚本调用：只创建桌面快捷方式然后退出。</summary>
+    private const string CreateShortcutArgument = "--create-shortcut";
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        // 这个分支必须在互斥锁之前 —— 程序已经在跑的时候，安装脚本仍然要能建快捷方式。
+        if (e.Args.Any(a => string.Equals(a, CreateShortcutArgument, StringComparison.OrdinalIgnoreCase)))
+        {
+            CreateShortcutAndExit();
+            return;
+        }
 
         // 先建事件再抢互斥锁，这样"第二个实例通知第一个实例"的通道一定已经存在
         _showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName);
@@ -97,6 +107,31 @@ public partial class App : Application
         }
 
         StartShowWatcher();
+    }
+
+    /// <summary>
+    /// 建桌面快捷方式然后退出。退出码 0 表示成功，供调用方判断。
+    /// 这里刻意不走后面的初始化流程 —— 那会建托盘图标、注册全局热键、开窗口。
+    /// </summary>
+    private void CreateShortcutAndExit()
+    {
+        var executable = Environment.ProcessPath;
+        var exitCode = 1;
+
+        if (!string.IsNullOrEmpty(executable))
+        {
+            var shortcut = ShortcutWriter.DesktopShortcutPath();
+            var ok = ShortcutWriter.TryCreate(
+                shortcut,
+                executable,
+                "桌面应用启动器",
+                Path.GetDirectoryName(executable),
+                out _);
+
+            exitCode = ok ? 0 : 1;
+        }
+
+        Shutdown(exitCode);
     }
 
     private void StartShowWatcher()

@@ -8,8 +8,7 @@
     产物：publish\WinLauncher.exe —— 单个自包含 exe，不需要装 .NET 运行时。
 #>
 param(
-    [switch]$SkipPublish,
-    [string]$ShortcutName = '应用启动器'
+    [switch]$SkipPublish
 )
 
 $ErrorActionPreference = 'Stop'
@@ -39,28 +38,28 @@ $size = [Math]::Round((Get-Item $exe).Length / 1MB, 1)
 Write-Output "发布完成：$exe  ($size MB)"
 
 # ── 桌面快捷方式 ──────────────────────────────────────────────
-# 必须用 SpecialFolder.DesktopDirectory，不能硬编码 %USERPROFILE%\Desktop ——
-# 开了 OneDrive 桌面同步的话，桌面会被重定向到 OneDrive 目录下。
+#
+# ⚠️ 刻意不用 WScript.Shell（PowerShell 里最省事的做法）。
+#    它是 ANSI 时代的 COM 组件：在"非 Unicode 程序的语言"被设成西欧(1252) 的系统上，
+#    只要路径里有中文就写不了 —— 中文会变成 "???"，连 Set TargetPath 都会抛
+#    "Value does not fall within the expected range"。而这个项目的目录名
+#    （win启动工具）和快捷方式名（应用启动器）全是中文，必然踩中。
+#
+#    程序自己用的是 IShellLinkW，Unicode 原生，所以交给它建。
+#    顺带这也让"从 GitHub 下载单文件 exe"的人有办法建快捷方式（设置里有按钮）。
 $desktop  = [Environment]::GetFolderPath('DesktopDirectory')
-$linkPath = Join-Path $desktop "$ShortcutName.lnk"
+$linkPath = Join-Path $desktop '应用启动器.lnk'
 
-# ⚠️ WScript.Shell 是 ANSI 时代的 COM 组件，写不了含中文的路径 ——
-#    在"非 Unicode 程序的语言"设成西欧(1252) 的系统上，中文会变成 "???" 然后 Save 失败。
-#    所以先建一个纯 ASCII 名的，属性设好，最后用 Rename-Item（.NET，Unicode 安全）改中文名。
-$temporaryLink = Join-Path $desktop ('WinLauncher-' + [guid]::NewGuid().ToString('N').Substring(0, 8) + '.lnk')
+$process = Start-Process -FilePath $exe -ArgumentList '--create-shortcut' -Wait -PassThru
 
-$shell    = New-Object -ComObject WScript.Shell
-$shortcut = $shell.CreateShortcut($temporaryLink)
-$shortcut.TargetPath       = $exe
-$shortcut.WorkingDirectory = $publish
-$shortcut.IconLocation     = "$exe,0"
-$shortcut.Description      = '桌面应用启动器'
-$shortcut.Save()
+if ($process.ExitCode -eq 0 -and (Test-Path -LiteralPath $linkPath)) {
+    Write-Output "桌面快捷方式：$linkPath"
+}
+else {
+    Write-Warning "创建桌面快捷方式失败（退出码 $($process.ExitCode)）。"
+    Write-Warning "可以在程序里「设置 → 创建桌面快捷方式」手动重试。"
+}
 
-if (Test-Path -LiteralPath $linkPath) { Remove-Item -LiteralPath $linkPath -Force }
-Rename-Item -LiteralPath $temporaryLink -NewName "$ShortcutName.lnk" -Force
-
-Write-Output "桌面快捷方式：$linkPath"
 Write-Output ''
 Write-Output '接下来手动做两件事，桌面就只剩这一个图标了：'
 Write-Output '  1. 把桌面上其它快捷方式删掉或拖进启动器里'

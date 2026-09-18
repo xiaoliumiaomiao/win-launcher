@@ -221,6 +221,35 @@ public partial class SettingsDialog : Window
             "应用启动器", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
+    private void OnCreateDesktopShortcut(object sender, RoutedEventArgs e)
+    {
+        var executable = Environment.ProcessPath;
+        if (string.IsNullOrEmpty(executable))
+        {
+            MessageBox.Show(this, "拿不到当前程序的位置，无法创建快捷方式。",
+                "应用启动器", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var shortcut = ShortcutWriter.DesktopShortcutPath();
+
+        // 已经有一个就覆盖它 —— 用户多半是想让快捷方式指向现在这个位置
+        // （程序被挪过之后，旧的快捷方式会指向不存在的路径）
+        if (ShortcutWriter.TryCreate(shortcut, executable, "桌面应用启动器",
+                Path.GetDirectoryName(executable), out var error))
+        {
+            MessageBox.Show(this,
+                $"已在桌面创建快捷方式：\n\n{shortcut}",
+                "应用启动器", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        else
+        {
+            MessageBox.Show(this,
+                $"创建快捷方式失败：\n\n{error}",
+                "应用启动器", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
     private void OnOpenDataFolder(object sender, RoutedEventArgs e)
     {
         try

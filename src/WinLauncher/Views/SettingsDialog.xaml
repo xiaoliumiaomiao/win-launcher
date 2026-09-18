@@ -105,6 +105,9 @@
                 <Button Content="打开数据目录" Style="{StaticResource DialogButtonStyle}"
                         Click="OnOpenDataFolder"
                         ToolTip="配置文件和图标缓存所在的位置，备份时拷这个文件夹即可"/>
+                <Button Content="创建桌面快捷方式" Style="{StaticResource DialogButtonStyle}"
+                        Click="OnCreateDesktopShortcut"
+                        ToolTip="从 GitHub 下载的单文件版本用这个把图标放到桌面上"/>
             </StackPanel>
             <TextBlock x:Name="DataPathText" Style="{StaticResource HintTextStyle}"/>
             <TextBlock Style="{StaticResource HintTextStyle}"

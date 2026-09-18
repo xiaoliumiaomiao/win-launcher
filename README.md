@@ -24,7 +24,7 @@ WinLauncher replaces all of that with a single icon: a small panel that finds yo
 
 **Just want to use it** — download **[WinLauncher.exe](https://github.com/xiaoliumiaomiao/win-launcher/releases/latest)** and run it. Nothing to install; the executable is self-contained and does not need the .NET runtime.
 
-To get it onto the desktop too: right-click the downloaded file → **发送到** → **桌面快捷方式**, then rename it to whatever you like.
+To get it onto the desktop too: open it and use **设置 → 创建桌面快捷方式**. That gives the shortcut the right name and icon; the Windows "Send to → Desktop" route does not.
 
 **Building from source** needs the [.NET 10 SDK](https://dotnet.microsoft.com/download):
 

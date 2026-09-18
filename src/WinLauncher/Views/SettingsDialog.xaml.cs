@@ -11,6 +11,7 @@ public partial class SettingsDialog : Window
     private readonly DataStore _store;
     private readonly IconService _icons;
     private readonly string _originalHotKey;
+    private readonly bool _originalStartWithWindows;
 
     /// <summary>只有本机真实存在的来源才显示出来，免得列一堆用不上的选项。</summary>
     private readonly List<ScanSource> _sources;
@@ -34,6 +35,12 @@ public partial class SettingsDialog : Window
         UpdateCustomRootBox();
         HotKeyBox.Text = _originalHotKey;
         HideAfterLaunchBox.IsChecked = store.Data.Settings.HideAfterLaunch;
+
+        // 自启状态直接读注册表，不存进配置文件 —— 注册表才是唯一真相。
+        // 用户可能在任务管理器里把它禁用了，那配置文件就会撒谎。
+        _originalStartWithWindows = StartupManager.IsEnabled();
+        StartWithWindowsBox.IsChecked = _originalStartWithWindows;
+
         DataPathText.Text = AppPaths.DataRoot;
     }
 
@@ -269,6 +276,24 @@ public partial class SettingsDialog : Window
 
         _store.Data.Scan.Sources = _sources;
         _store.Data.Scan.FilterNoise = FilterNoiseBox.IsChecked == true;
+        // 自启是唯一一个写注册表的选项，可能在组策略或安全软件下被拒绝，
+        // 所以它失败不该把整个设置对话框也一起废掉
+        var wantStartWithWindows = StartWithWindowsBox.IsChecked == true;
+        if (wantStartWithWindows != _originalStartWithWindows)
+        {
+            var ok = wantStartWithWindows
+                ? StartupManager.Enable(out var error)
+                : StartupManager.Disable(out error);
+
+            if (!ok)
+            {
+                MessageBox.Show(this,
+                    $"{(wantStartWithWindows ? "启用" : "关闭")}开机自启失败：\n\n{error}\n\n"
+                    + "其它设置会照常保存。",
+                    "应用启动器", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
         _store.Data.Settings.HotKey = hotKey;
         _store.Data.Settings.HideAfterLaunch = HideAfterLaunchBox.IsChecked == true;
 

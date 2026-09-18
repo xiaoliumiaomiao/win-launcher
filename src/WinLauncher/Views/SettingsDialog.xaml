@@ -90,6 +90,12 @@
             <CheckBox x:Name="HideAfterLaunchBox" Style="{StaticResource DialogCheckBoxStyle}"
                       Margin="0,18,0,0" Content="启动一个应用之后自动把窗口收起来"/>
 
+            <CheckBox x:Name="StartWithWindowsBox" Style="{StaticResource DialogCheckBoxStyle}"
+                      Margin="0,4,0,0" Content="开机时自动启动"/>
+
+            <TextBlock Style="{StaticResource HintTextStyle}" Margin="0,2,0,3"
+                       Text="登录后在后台静默运行，不弹窗口，只驻留系统托盘，按 Alt+. 随时呼出。这一项写在当前用户的注册表里（不需要管理员权限）；想从别处禁用，可以在任务管理器 →「启动」应用 里关掉。"/>
+
             <!-- ===== 维护 ===== -->
             <TextBlock Text="维护" Style="{StaticResource FieldLabelStyle}" Margin="0,18,0,5"/>
             <StackPanel Orientation="Horizontal">

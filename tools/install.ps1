@@ -44,13 +44,21 @@ Write-Output "发布完成：$exe  ($size MB)"
 $desktop  = [Environment]::GetFolderPath('DesktopDirectory')
 $linkPath = Join-Path $desktop "$ShortcutName.lnk"
 
+# ⚠️ WScript.Shell 是 ANSI 时代的 COM 组件，写不了含中文的路径 ——
+#    在"非 Unicode 程序的语言"设成西欧(1252) 的系统上，中文会变成 "???" 然后 Save 失败。
+#    所以先建一个纯 ASCII 名的，属性设好，最后用 Rename-Item（.NET，Unicode 安全）改中文名。
+$temporaryLink = Join-Path $desktop ('WinLauncher-' + [guid]::NewGuid().ToString('N').Substring(0, 8) + '.lnk')
+
 $shell    = New-Object -ComObject WScript.Shell
-$shortcut = $shell.CreateShortcut($linkPath)
+$shortcut = $shell.CreateShortcut($temporaryLink)
 $shortcut.TargetPath       = $exe
 $shortcut.WorkingDirectory = $publish
 $shortcut.IconLocation     = "$exe,0"
 $shortcut.Description      = '桌面应用启动器'
 $shortcut.Save()
+
+if (Test-Path -LiteralPath $linkPath) { Remove-Item -LiteralPath $linkPath -Force }
+Rename-Item -LiteralPath $temporaryLink -NewName "$ShortcutName.lnk" -Force
 
 Write-Output "桌面快捷方式：$linkPath"
 Write-Output ''

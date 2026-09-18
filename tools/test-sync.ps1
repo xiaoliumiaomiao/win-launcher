@@ -19,7 +19,10 @@ $cfg     = Join-Path $dataDir 'launcher.json'
 # 每次用一个新的临时目录。固定目录名会被上一轮遗留的句柄锁住
 # （资源管理器、杀软扫描都可能持有），导致删除失败。
 $fixture = Join-Path $env:TEMP ("launcher-test-" + (Get-Date -Format 'HHmmss'))
-$vendorDir = Join-Path $fixture '某厂商'          # 文件夹名不含任何分类关键词，避免干扰分类器
+# ⚠️ 夹具目录名必须是纯 ASCII。WScript.Shell 连"位于中文目录下的"路径都处理不了，
+#    而这个项目自身的路径就含中文，所以测试目录得自己避开。
+#    （快捷方式文件名保持中文 —— 那才是分类器要测的东西，用下面的 Rename 绕法）
+$vendorDir = Join-Path $fixture 'Vendor'
 $notepadLnk = Join-Path $vendorDir '记事本.lnk'
 $renameLnk  = Join-Path $vendorDir '写字板改名后.lnk'
 
@@ -65,10 +68,20 @@ function CategoryName($data, [string]$id) {
 }
 
 function New-TestLnk([string]$path, [string]$target) {
+    # ⚠️ WScript.Shell 是 ANSI 时代的 COM 组件。在"非 Unicode 程序的语言"被设成
+    #    西欧(1252) 的系统上（本机就是），它写不了含中文的路径 —— 中文会变成 "???"，
+    #    然后 Save() 直接失败。而本程序自己用的 IShellLinkW 是 Unicode 原生的，不受影响。
+    #
+    #    所以先用纯 ASCII 名建出来，再用 Rename-Item（走 .NET，Unicode 安全）改成中文名。
+    $directory = Split-Path $path -Parent
+    $temporary = Join-Path $directory ('tmp' + [guid]::NewGuid().ToString('N').Substring(0, 8) + '.lnk')
+
     $ws = New-Object -ComObject WScript.Shell
-    $s = $ws.CreateShortcut($path)
+    $s = $ws.CreateShortcut($temporary)
     $s.TargetPath = $target
     $s.Save()
+
+    Rename-Item -LiteralPath $temporary -NewName (Split-Path $path -Leaf) -Force
 }
 
 # ==================== 准备 ====================
@@ -85,8 +98,8 @@ New-TestLnk (Join-Path $vendorDir 'Git Release Notes.lnk') "$env:ProgramFiles\Gi
 # 噪声：名字里带"卸载"
 New-TestLnk (Join-Path $vendorDir 'Uninstall 某软件.lnk')  "$env:WINDIR\System32\notepad.exe"
 # 深层目录里的应用，应该被压平到同一个来源（不再按文件夹分类）
-New-Item -ItemType Directory -Force -Path (Join-Path $vendorDir '子目录') | Out-Null
-New-TestLnk (Join-Path $vendorDir '子目录\计算器.lnk')     "$env:WINDIR\System32\calc.exe"
+New-Item -ItemType Directory -Force -Path (Join-Path $vendorDir 'Nested') | Out-Null
+New-TestLnk (Join-Path $vendorDir 'Nested\计算器.lnk')     "$env:WINDIR\System32\calc.exe"
 
 if (Test-Path $cfg) { Remove-Item -LiteralPath $cfg -Force }
 $seed = [ordered]@{
@@ -115,7 +128,7 @@ $d = Invoke-Sync
 
 Check "应用被摊平到顶层 Apps（不再装在分类里）" (@($d.Apps).Count -gt 0) "Apps 条数 $(@($d.Apps).Count)"
 Check "分类是按语义建的，不是文件夹名" (
-    (@($d.Categories | Where-Object { $_.Name -eq '某厂商' }).Count -eq 0)) "不该出现「某厂商」这个分类"
+    (@($d.Categories | Where-Object { $_.Name -eq 'Vendor' }).Count -eq 0)) "不该出现「某厂商」这个分类"
 Check "内置分类已建立" (@($d.Categories | Where-Object { $_.Id -eq $DEV }).Count -eq 1)
 Check "兜底的「其他」分类也存在" (@($d.Categories | Where-Object { $_.Id -eq $OTHER }).Count -eq 1) `
     "少了它，归到「其他」的应用在界面上会彻底看不见"
@@ -128,7 +141,7 @@ Check "命令提示符 → 同时也属于系统工具（多归属）" ($cmdCats
 
 Check "Git Bash → 开发工具" ((CategoriesOf $d 'Git Bash') -contains $DEV) "实际: $((CategoriesOf $d 'Git Bash') -join ',')"
 Check "任务管理器 → 系统工具" ((CategoriesOf $d '任务管理器') -contains $SYS) "实际: $((CategoriesOf $d '任务管理器') -join ',')"
-Check "深层子目录里的应用也被收录（压平到同一来源）" ((Find-Entry $d '计算器').Count -eq 1)
+Check "嵌套子目录里的应用也被收录（压平到同一来源）" ((Find-Entry $d '计算器').Count -eq 1)
 
 Check "HTML 文档类目标被过滤" ((Find-Entry $d 'Git Release Notes').Count -eq 0)
 Check "名字带卸载的被过滤" ((Find-Entry $d 'Uninstall 某软件').Count -eq 0)
@@ -219,3 +232,6 @@ Write-Output "`n==================== 结果 ===================="
 Write-Output "通过 $script:pass  失败 $script:fail"
 Write-Output "（测试配置已清除，下次打开程序会重新自动扫描真实应用）"
 if ($script:fail -gt 0) { exit 1 }
+
+
+

@@ -48,6 +48,7 @@ That produces `publish\WinLauncher.exe` and a desktop shortcut in one step.
 | Right-click a card → 归类 | Tick the categories it belongs to |
 | Right-click a card → 从列表中移除 | Drop it from the list (touches no file on disk) |
 | Type in the search box | Filter by name, description or path |
+| Tick 开机时自动启动 in Settings | Have it start with Windows, silently in the tray |
 | `✕` | Hide to the system tray, so the hotkey keeps working; quit from the tray menu |
 
 The interface is in Chinese, and the category set is Chinese by design. The classifier matches both Chinese and English app names — several built-in Windows tools are only recognizable by their English names.
@@ -76,6 +77,9 @@ The obvious model — each category holds a list of apps — makes "this app bel
 
 **The app pins itself to normal privileges.**
 Windows' UIPI stops a non-elevated Explorer from sending drag-and-drop messages to an elevated process. Run WinLauncher as administrator and dropping a shortcut onto it fails **silently** — no error, no log, nothing to search for. The manifest asks for `asInvoker`, and the app checks its own token at startup so it can offer a one-click relaunch if it ever ends up elevated.
+
+**The autostart entry never points at a stale path.**
+Moving the `.exe` would normally leave the registry pointing at the old location, and autostart would stop working with nothing to show for it. So the entry is rewritten on every launch if it no longer matches the running executable — the failure surfaces weeks later and gets blamed on something else.
 
 **Drag-and-drop failures leave evidence.**
 For the same reason. The failure mode is invisible, so every `DragOver` and `Drop` is written to `diagnostics.log`. Otherwise there is nothing to go on.

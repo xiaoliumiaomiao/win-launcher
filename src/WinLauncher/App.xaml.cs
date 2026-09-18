@@ -46,11 +46,19 @@ public partial class App : Application
             args.Handled = true;
         };
 
+        // 开机自启时带这个参数：只驻留托盘，不弹窗口
+        var silent = e.Args.Any(a =>
+            string.Equals(a, StartupManager.SilentArgument, StringComparison.OrdinalIgnoreCase));
+
         ThemeManager.Initialize();
         AppPaths.EnsureCreated();
 
         _store = new DataStore();
         _store.Load();
+
+        // 校正开机自启里记的路径。放在 Load 之后 —— 它要写日志，
+        // 而日志目录是 AppPaths.EnsureCreated 建的。
+        StartupManager.Sync();
 
         _icons = new IconService();
 
@@ -74,7 +82,19 @@ public partial class App : Application
             _window.Hide();
         };
 
-        _window.Show();
+        // ⚠️ 数据层的启动工作（首次扫描、失效检测）不能挂在窗口的 Loaded 事件上。
+        // 静默自启时窗口从头到尾不显示，Loaded 根本不会触发，扫描也就不会跑 ——
+        // 表现出来就是"开机自启之后应用列表一直不更新"，而且没有任何报错。
+        _window.RunStartupWork();
+
+        if (silent)
+        {
+            Diagnostics.Log($"静默启动（{StartupManager.SilentArgument}）：只驻留托盘，不显示窗口");
+        }
+        else
+        {
+            _window.Show();
+        }
 
         StartShowWatcher();
     }
@@ -154,6 +174,10 @@ public partial class App : Application
     {
         if (_window is null)
             return;
+
+        // 只记一行。「热键没反应」这类反馈里，第一个要回答的问题就是
+        // "热键到底有没有触发" —— 有这行就能区分"热键没收到"和"收到了但窗口没显示"。
+        Diagnostics.Log($"热键触发：IsVisible={_window.IsVisible} IsActive={_window.IsActive}");
 
         if (_window.IsVisible && _window.IsActive)
             _window.Hide();

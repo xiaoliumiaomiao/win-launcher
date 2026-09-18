@@ -45,11 +45,27 @@ public partial class MainWindow : Window
         Loaded += OnWindowLoaded;
     }
 
-    private async void OnWindowLoaded(object sender, RoutedEventArgs e)
+    private async void OnWindowLoaded(object sender, RoutedEventArgs e) => RunStartupWork();
+
+    private bool _startupWorkDone;
+
+    /// <summary>
+    /// 启动时要做的数据层工作（失效检测 + 同步）。
+    ///
+    /// 由 App 在创建窗口后直接调用，而不是等 <see cref="FrameworkElement.Loaded"/> ——
+    /// 静默自启时窗口从不显示，Loaded 不会触发，扫描就永远不跑。
+    /// 自己做一次幂等保护，两条路径都走到也只跑一次。
+    /// </summary>
+    public void RunStartupWork()
     {
+        if (_startupWorkDone)
+            return;
+
+        _startupWorkDone = true;
+
         // 先用磁盘上的数据把界面画出来（首帧不等扫描），再去和扫描目录对账
         _viewModel.RefreshMissingStates();
-        await RunScanAsync();
+        _ = RunScanAsync();
     }
 
     /// <summary>Alt+. 从任何地方把窗口叫到前台。</summary>

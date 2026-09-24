@@ -72,6 +72,7 @@ public static class ThemeManager
             SetBrushColor("CardBackgroundBrush", Color.FromArgb(0x18, 0xFF, 0xFF, 0xFF));
             SetBrushColor("CardHoverBrush", Color.FromArgb(0x2E, 0xFF, 0xFF, 0xFF));
             SetBrushColor("CardPressedBrush", Color.FromArgb(0x18, 0xFF, 0xFF, 0xFF));
+            SetBrushColor("IconTileBrush", Color.FromArgb(0x20, 0xFF, 0xFF, 0xFF));
             SetBrushColor("CategorySelectedBrush", Color.FromArgb(0x30, 0xFF, 0xFF, 0xFF));
             SetBrushColor("CategoryHoverBrush", Color.FromArgb(0x18, 0xFF, 0xFF, 0xFF));
             SetBrushColor("TextPrimaryBrush", Color.FromRgb(0xFF, 0xFF, 0xFF));
@@ -91,6 +92,7 @@ public static class ThemeManager
             SetBrushColor("CardBackgroundBrush", Color.FromArgb(0x7A, 0xFF, 0xFF, 0xFF));
             SetBrushColor("CardHoverBrush", Color.FromArgb(0xC8, 0xFF, 0xFF, 0xFF));
             SetBrushColor("CardPressedBrush", Color.FromArgb(0x5A, 0xFF, 0xFF, 0xFF));
+            SetBrushColor("IconTileBrush", Color.FromArgb(0x0C, 0x00, 0x00, 0x00));
             SetBrushColor("CategorySelectedBrush", Color.FromArgb(0x40, 0x00, 0x00, 0x00));
             SetBrushColor("CategoryHoverBrush", Color.FromArgb(0x1A, 0x00, 0x00, 0x00));
             SetBrushColor("TextPrimaryBrush", Color.FromRgb(0x1A, 0x1A, 0x1A));
@@ -105,13 +107,20 @@ public static class ThemeManager
     }
 
     /// <summary>
-    /// 直接改画刷的 Color，而不是替换资源。
-    /// 这样 XAML 里用 StaticResource 引用的画刷实例不变，颜色变化会自动重绘。
+    /// 初始化阶段替换被冻结的画刷；窗口创建后仍可修改未冻结的画刷。
+    /// WPF 会冻结编译后的 XAML 画刷资源，直接给 Color 赋值会被跳过。
+    /// 界面以 DynamicResource 引用这些资源，替换后可重绘现有控件。
     /// </summary>
     private static void SetBrushColor(string resourceKey, Color color)
     {
-        if (Application.Current?.Resources[resourceKey] is SolidColorBrush brush && !brush.IsFrozen)
+        var resources = Application.Current?.Resources;
+        if (resources is null)
+            return;
+
+        if (resources[resourceKey] is SolidColorBrush { IsFrozen: false } brush)
             brush.Color = color;
+        else
+            resources[resourceKey] = new SolidColorBrush(color);
     }
 
     private static bool ReadSystemUsesDarkMode()

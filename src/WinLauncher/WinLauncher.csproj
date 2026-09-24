@@ -40,6 +40,10 @@
   <ItemGroup>
     <!-- 标题栏里要显示这个图标，必须作为资源嵌入，光设 ApplicationIcon 是拿不到的 -->
     <Resource Include="Assets\app.ico" />
+    <!-- Fluent System Icons 固定版本的开源字体和许可随单文件程序一起嵌入。 -->
+    <Resource Include="Assets\Fonts\FluentSystemIcons-Regular.ttf" />
+    <Resource Include="Assets\Fonts\LICENSE-FluentSystemIcons.txt" />
+    <Resource Include="Assets\Fonts\NOTICE-FluentSystemIcons.txt" />
   </ItemGroup>
 
 </Project>

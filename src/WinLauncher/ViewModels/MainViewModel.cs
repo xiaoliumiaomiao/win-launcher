@@ -70,6 +70,10 @@ public sealed class MainViewModel : ObservableObject
 
     public bool IsEmpty => VisibleApps.Count == 0;
 
+    public string ViewTitle => IsSearching ? "搜索结果" : SelectedCategory.Name;
+
+    public string ViewCountText => $"{VisibleApps.Count} 个应用";
+
     public string EmptyTitle => IsSearching
         ? "没有匹配的应用"
         : SelectedCategory.IsSynthetic
@@ -130,6 +134,8 @@ public sealed class MainViewModel : ObservableObject
 
         OnPropertyChanged(nameof(IsEmpty));
         OnPropertyChanged(nameof(IsSearching));
+        OnPropertyChanged(nameof(ViewTitle));
+        OnPropertyChanged(nameof(ViewCountText));
         OnPropertyChanged(nameof(EmptyTitle));
         OnPropertyChanged(nameof(EmptyHint));
         OnPropertyChanged(nameof(HasNoCategoriesAtAll));

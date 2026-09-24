@@ -16,13 +16,13 @@
 
         <StackPanel Margin="22,20,22,20">
             <TextBlock Text="设置" FontSize="15" FontWeight="SemiBold"
-                       Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,18"/>
+                       Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,18"/>
 
             <!-- ===== 自动扫描来源 ===== -->
             <TextBlock Text="自动扫描来源" Style="{StaticResource FieldLabelStyle}"/>
             <Border CornerRadius="6" Padding="12,10"
-                    Background="{StaticResource SearchBackgroundBrush}"
-                    BorderBrush="{StaticResource DividerBrush}" BorderThickness="1">
+                    Background="{DynamicResource SearchBackgroundBrush}"
+                    BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1">
                 <ItemsControl x:Name="SourceList">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
@@ -30,7 +30,7 @@
                                       Content="{Binding DisplayName}"
                                       Margin="0,3"
                                       FontSize="13"
-                                      Foreground="{StaticResource TextPrimaryBrush}"/>
+                                      Foreground="{DynamicResource TextPrimaryBrush}"/>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
@@ -54,7 +54,7 @@
                 <TextBox x:Name="CustomRootBox" Grid.Column="0"
                          Style="{StaticResource DialogTextBoxStyle}"
                          IsReadOnly="True"
-                         Foreground="{StaticResource TextSecondaryBrush}"/>
+                         Foreground="{DynamicResource TextSecondaryBrush}"/>
 
                 <Button Grid.Column="1" Content="浏览…" Style="{StaticResource DialogButtonStyle}"
                         Margin="6,0,0,0" Click="OnBrowseCustomRoot"/>
@@ -80,7 +80,7 @@
 
                 <TextBlock Grid.Column="1" VerticalAlignment="Center" Margin="10,0,0,0"
                            FontSize="11.5" TextWrapping="Wrap"
-                           Foreground="{StaticResource TextTertiaryBrush}"
+                           Foreground="{DynamicResource TextTertiaryBrush}"
                            Text="点这里，然后直接按下你想要的组合键"/>
             </Grid>
             <TextBlock Style="{StaticResource HintTextStyle}"
@@ -110,6 +110,9 @@
                         ToolTip="从 GitHub 下载的单文件版本用这个把图标放到桌面上"/>
             </StackPanel>
             <TextBlock x:Name="DataPathText" Style="{StaticResource HintTextStyle}"/>
+            <Button Content="查看开源许可" Style="{StaticResource SidebarActionStyle}"
+                    HorizontalAlignment="Left" Margin="0,8,0,0"
+                    Click="OnOpenLicenses"/>
             <TextBlock Style="{StaticResource HintTextStyle}"
                        Text="改完来源后点「确定」会自动重新同步一次。主窗口里按 F5 也能随时手动同步。"/>
 

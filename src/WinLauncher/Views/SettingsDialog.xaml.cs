@@ -267,6 +267,11 @@ public partial class SettingsDialog : Window
         }
     }
 
+    private void OnOpenLicenses(object sender, RoutedEventArgs e)
+    {
+        new LicensesDialog { Owner = this }.ShowDialog();
+    }
+
     // ==================== 确认 / 取消 ====================
 
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)

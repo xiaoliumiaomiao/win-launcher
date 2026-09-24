@@ -99,3 +99,5 @@ Windows 的 UIPI 会阻止普通权限的资源管理器向提权进程发送拖
 ## 许可证
 
 [MIT](LICENSE)
+
+界面操作图标使用 [Microsoft Fluent System Icons](https://github.com/microsoft/fluentui-system-icons)，遵循 MIT 许可证。完整许可及第三方声明已内嵌，可在**设置 → 查看开源许可**阅读；所用源码版本记录在 [SOURCE.md](src/WinLauncher/Assets/Fonts/SOURCE.md)。

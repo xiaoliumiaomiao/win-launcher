@@ -99,3 +99,5 @@ Around twenty more are in the source comments.
 ## License
 
 [MIT](LICENSE)
+
+Interface icons use [Microsoft Fluent System Icons](https://github.com/microsoft/fluentui-system-icons) under the MIT license. The license and third-party notice are included in the app under **Settings → Open-source licenses**; the exact source revision is recorded in [SOURCE.md](src/WinLauncher/Assets/Fonts/SOURCE.md).

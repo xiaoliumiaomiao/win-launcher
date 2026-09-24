@@ -1,4 +1,5 @@
 using WinLauncher.Models;
+using WinLauncher.Services;
 
 namespace WinLauncher.ViewModels;
 
@@ -35,6 +36,24 @@ public sealed class CategoryViewModel : ObservableObject
     public bool CanDelete => !IsSynthetic && !Model.IsBuiltIn;
 
     public string Name => Model.Name;
+
+    /// <summary>侧栏统一使用开源 Fluent System Icons 字体的图标。</summary>
+    public string IconGlyph => Model.Id switch
+    {
+        AllCategoryId => "\uF133",               // apps
+        CategoryClassifier.Development => "\uF2EF", // code
+        CategoryClassifier.Games => "\uE68A",       // games
+        CategoryClassifier.Media => "\uE854",       // music note
+        CategoryClassifier.Social => "\uF286",      // chat
+        CategoryClassifier.Network => "\uE38D",     // cloud download
+        CategoryClassifier.Office => "\uF378",      // document
+        CategoryClassifier.Browser => "\uF45A",     // globe
+        CategoryClassifier.Hardware => "\uE6E3",    // hard drive
+        CategoryClassifier.WindowsAdmin => "\uF8B5",// window
+        CategoryClassifier.SystemTools => "\uF82E", // toolbox
+        CategoryClassifier.Other => "\uF133",       // apps
+        _ => "\uF418",                              // folder
+    };
 
     public bool IsBuiltIn => Model.IsBuiltIn;
 

@@ -16,7 +16,7 @@
 
         <StackPanel Margin="22,20,22,20">
             <TextBlock x:Name="TitleText" FontSize="15" FontWeight="SemiBold"
-                       Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,18"/>
+                       Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,18"/>
 
             <TextBlock x:Name="LabelText" Style="{StaticResource FieldLabelStyle}"/>
             <TextBox x:Name="InputBox" Style="{StaticResource DialogTextBoxStyle}" MaxLength="30"/>
